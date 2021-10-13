@@ -1,0 +1,24 @@
+server:
+  port: 8002
+
+spring:
+  application:
+    name: provider
+# dubbo 相关配置(dubbo 的配置不再以 Spring 开头)
+dubbo:
+  application:
+    # 应用名称
+    name: provider
+  scan:
+    # 接口实现者（服务实现）包
+    base-packages: com.zjj.dubbo.provider.serviceImpl
+  # 注册中心信息
+  registry:
+    address: zookeeper://49.234.85.106:2181
+    # 连接超时时间，建议大一点否则会连接失败
+    timeout: 35000
+  protocol:
+    # 协议名称
+    name: dubbo
+    # 协议端口
+    port: 20880

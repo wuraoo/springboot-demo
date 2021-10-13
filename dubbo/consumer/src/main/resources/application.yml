@@ -1,0 +1,19 @@
+server:
+  port: 8001
+spring:
+  application:
+    name: consumer
+# dubbo 相关配置
+dubbo:
+  application:
+    name: consumer
+  registry:
+    address: zookeeper://49.234.85.106:2181
+    timeout: 35000
+  protocol:
+    # 协议名称
+    name: dubbo
+    # 协议端口
+    port: 20880
+#启动应用时是否检查注册中心上有没有依赖的服务，默认true
+#dubbo.consumer.check=false
