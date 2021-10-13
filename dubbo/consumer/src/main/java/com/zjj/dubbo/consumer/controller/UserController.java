@@ -2,6 +2,7 @@ package com.zjj.dubbo.consumer.controller;
 
 import com.zjj.dubbo.pojo.User;
 import com.zjj.dubbo.service.UserService;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.config.annotation.Reference;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -9,12 +10,20 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class UserController {
 
-    // 注意该注解是dubbo的注解
-    @Reference
-    private UserService userService;
+    // 根据version确定调用的是实现类
+    @DubboReference(version = "userService1")
+    private UserService userService1;
 
-    @RequestMapping("/user")
-    public User getUser(){
-        return userService.getUser();
+    @DubboReference(version = "userService2")
+    private UserService userService2;
+
+    @RequestMapping("/service1")
+    public User service1(){
+        return userService1.getUser();
+    }
+
+    @RequestMapping("/service2")
+    public User service2(){
+        return userService2.getUser();
     }
 }
