@@ -3,7 +3,7 @@ server:
 spring:
   application:
     name: consumer
-# dubbo оЮ╧ьеДжц
+# dubbo О©╫О©╫О©╫О©╫О©╫О©╫О©╫
 dubbo:
   application:
     name: consumer
@@ -11,9 +11,9 @@ dubbo:
     address: zookeeper://49.234.85.106:2181
     timeout: 35000
   protocol:
-    # п╜рИцШЁф
+    # п╜О©╫О©╫О©╫О©╫О©╫О©╫
     name: dubbo
-    # п╜рИ╤к©з
+    # п╜О©╫О©╫к©О©╫
     port: 20880
-#фТ╤╞с╕сцй╠йг╥Я╪Л╡Ив╒╡Ажппдиоспц╩спрюю╣╣д╥ЧнЯё╛д╛хоtrue
+#О©╫О©╫О©╫О©╫с╕О©╫О©╫й╠О©╫г╥О©╫О©╫О©╫в╒О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ц╩О©╫О©╫О©╫О©╫О©╫О©╫О©╫д╥О©╫О©╫О©╫д╛О©╫О©╫true
 #dubbo.consumer.check=false
