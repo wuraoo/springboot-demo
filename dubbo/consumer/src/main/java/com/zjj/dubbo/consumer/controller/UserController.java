@@ -11,7 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     // 根据version确定调用的是实现类
-    @DubboReference(version = "userService1")
+    // 使用loadbalance确定使用哪个provider
+    @DubboReference(version = "userService1", loadbalance = "random")
     private UserService userService1;
 
     @DubboReference(version = "userService2")

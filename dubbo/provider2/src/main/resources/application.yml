@@ -1,0 +1,24 @@
+server:
+  port: 8003
+
+spring:
+  application:
+    name: provider2
+# dubbo �������(dubbo �����ò����� Spring ��ͷ)
+dubbo:
+  application:
+    # Ӧ������
+    name: provider2
+  scan:
+    # �ӿ�ʵ���ߣ�����ʵ�֣���
+    base-packages: com.zjj.dubbo.provider.serviceImpl
+  # ע��������Ϣ
+  registry:
+    address: zookeeper://49.234.85.106:2181
+    # ���ӳ�ʱʱ�䣬�����һ����������ʧ��
+    timeout: 35000
+  protocol:
+    # Э������
+    name: dubbo
+    # Э��˿�
+    port: 20881
