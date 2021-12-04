@@ -5,3 +5,9 @@ spring:
     port: 5672
     username: root
     password: root
+    # 发布确认类型设置   NONE：默认值，禁用发布确认模式；CORRELATED：发送成功触发回调； SIMPLE
+    # 注意：该配置项需要配合ConfirmCallback接口使用:详见utils/MyCallBack类中的confirm()方法
+    publisher-confirm-type: correlated
+    # 回退消息：用于处理无法路由的消息，即交换机到队列之间的过程中的消息
+    # 注意：该配置项需要配合ReturnCallback接口使用：详见utils/MyCallBack类中的returnedMessage()方法
+    publisher-returns: true

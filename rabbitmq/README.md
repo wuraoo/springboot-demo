@@ -28,6 +28,10 @@
 
 `RabbitMQ`：是一个消息代理：**它接收和转发消息**。您可以将其视为邮局：当您要将投递的邮件放入邮箱时，您可以确定邮递员会将邮件送到收件人手上。而RabbitMQ在这里就是充当了邮箱、邮局、快递员的角色。只不过RabbitMQ传输的不是纸张而是二进制数据（消息）。——官网介绍
 
+
+
+
+
 ## 二、安装使用
 
 **第一步**：官网下载相关包：
@@ -138,6 +142,10 @@
 Web可视化界面登录
 
 ![image-20211127211016297](RabbitMQ.assets/image-20211127211016297.png)
+
+
+
+
 
 ## 三、[Hello World](https://www.rabbitmq.com/tutorials/tutorial-one-python.html)
 
@@ -283,6 +291,10 @@ public class Comsumer {
 ```
 
 **消息的发送和消费过程可以通过Web可视化界面查看**
+
+
+
+
 
 ## 四、[Work Queues](https://www.rabbitmq.com/tutorials/tutorial-two-java.html)
 
@@ -551,6 +563,9 @@ channel.addConfirmListener(
 skipListMap.put(channel.getNextPublishSeqNo(), msg);
 ```
 
+
+
+
 ## 五、[ Publish/Subscribe](https://www.rabbitmq.com/tutorials/tutorial-three-python.html)
 
 ——Sending messages to many consumers at once.
@@ -682,6 +697,13 @@ public class Subscribe1 {
 }
 ```
 
+
+
+
+
+
+
+
 ## 六、[Routing](https://www.rabbitmq.com/tutorials/tutorial-four-java.html)
 
 ——Receiving messages selectively
@@ -799,6 +821,12 @@ public class Subscribe2 {
 
 ![image-20211129171748235](RabbitMQ.assets/image-20211129171748235.png)
 
+
+
+
+
+
+
 ## 七、 [Topics](https://www.rabbitmq.com/tutorials/tutorial-five-python.html)
 
 ——Receiving messages based on a pattern (topics)
@@ -860,7 +888,13 @@ channel.queueBind(queue, EXCHANGE_NAME, "*.list.*");
 
 ![image-20211129203216884](RabbitMQ.assets/image-20211129203216884.png)
 
-## 八、 [死信队列](https://www.rabbitmq.com/dlx.html)
+
+
+
+
+## 八、扩展
+
+###  [死信队列](https://www.rabbitmq.com/dlx.html)
 
 死信：即由于某些原因导致无法被消费的消息就称之为死信。
 
@@ -877,6 +911,8 @@ channel.queueBind(queue, EXCHANGE_NAME, "*.list.*");
 工作流程如下图所示：
 
 ![RabbitMQ.assets/deadletter.png](RabbitMQ.assets/deadletter.png)
+
+当发送消息的时候，正常情况下是由normal_queue交给normal_subscribe消费；但是由于一些原因导致无法被正常消费，这时就会标记这些消息为死信，并将其转发到死刑交换机上，在由死信交换机将消息分配给死信队列，最后由特定的消费者处理死信队列中下消息，保证了消息的不丢失。
 
 > 代码实现
 
@@ -1003,18 +1039,13 @@ public class Publish {
 结果为：
 
 - 正常情况下由Normal消费者消费消息；
-
 - 当出现死信后，死信会转发到死信队列，并由DL消费者消费。
 
-## 九、 [延时队列](https://www.rabbitmq.com/lazy-queues.html)
 
-延迟队列的主要目标之一是能够支持非常长的队列。由于各种原因，队列可能会变得非常长：
 
-- 消费者离线、宕机、维护等；
+### 延时队列
 
-- 生产者突然发送大量消息，消费者来不及消费；
 
-- 消费者比平时慢等。
 
 使用场景：
 
@@ -1022,21 +1053,158 @@ public class Publish {
 
 - 用户注册成功后，一段时间内未登录则短信提醒
 
+> TTL
+>
+
+TTL：Time To Live的缩写，即表示存活的时间。在RabbitMQ队列中的消息存在时间比配置的TTL长即为死信。
+
+在RabbitMQ中有多种当时设置TTL：
+
+1. 在声明期间定义消息TTL（队列中的消息最多存活设定时间）
+
+   ```java
+   // 创建一个map存放参数
+   Map<String, Object> args = new HashMap<String, Object>();
+   // 设置队列中的消息存活时间为6s
+   args.put("x-message-ttl", 60000);
+   // 在声明期间设置消息的TTL
+   channel.queueDeclare("myqueue", false, false, false, args);
+   ```
+
+2. 在发布者中定义每条消息的TTL
+
+   ```java
+   // 使用BasicProperties构建一个附加参数
+   AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder()
+       								// 设置每条消息的TTL为6s
+                                      .expiration("60000")
+                                      .build();
+   // 发布时携带参数以设定TTL
+   channel.basicPublish("my-exchange", "routing-key", properties, messageBodyBytes);
+   ```
+
+3. 在声明期间定义队列的TTL（消息在设定时间内没有被消费即过期）
+
+   ```java
+   Map<String, Object> args = new HashMap<String, Object>();
+   // 设置
+   args.put("x-expires", 1800000);
+   channel.queueDeclare("myqueue", false, false, false, args);
+   ```
+
+> 实现方式
+>
+
+如下图：
+
+![lazyqueue](RabbitMQ.assets/lazyqueue.png)
+
+延时队列的核心设计思想为：
+
+- 先将消息发送到指定的队列中（A\B\C）;
+- 设置队列的TTL 或者 消息发送时设置消息的TTL（后者可以**灵活**的设置**一个队列**中消息的延时时间）；
+- 当消息在队列中过期之后就会进入死信队列，然后由死信队列的消费消费消息就可以达到延时的效果。
+- 代码可查看Springboot整合中的`6.LazyQueues`相关代码
+
+`注意`：在消息生产者处设置TTL的方法存在问题——队列中的消息是按顺序的，也就是只有当前一个消息被消费（处理）之后才能消费下个一个消息。
+
+例如：连续发送两个消息m1、m2；m1延时30s，m2延时10s。预期结果为10s后收到m2，30s后收到m1。但是结果却是30s后收到m1，又立刻收到m2——即m2被m1阻塞了。
 
 
 
+> 使用插件实现延时队列
+>
+
+RabbitMQ插件库：https://www.rabbitmq.com/community-plugins.html
+
+github地址：https://github.com/rabbitmq/rabbitmq-delayed-message-exchange/releases
+
+- 使用插件实现需要先准备好插件：rabbitmq_delayed_message_exchange-3.8.9-0199d11c.ez
+
+- 将插件放置到：/usr/lib/rabbitmq/lib/rabbitmq_server-3.8.26/plugins目录下
+
+- 安装插件，使用命令：rabbitmq-plugins enable rabbitmq_delayed_message_exchange
+
+- 重启MQ
+
+- 安装完成之后MQ中就会出现新的交换机类型：x-delayed-message
+
+  ![image-20211203163302448](RabbitMQ.assets/image-20211203163302448.png)
+
+- 因此，该方法延时的实现方法是**通过交换机实现**的
+
+**使用该方式可以避免上面阻塞的问题。**
+
+代码实现可见SpringBoot整合`7演示队列（插件实现）`
 
 
 
+### [优先级队列](https://www.rabbitmq.com/priority.html)
+
+任何队列都可以使用客户端提供的[可选参数](https://www.rabbitmq.com/queues.html#optional-arguments)转换为优先队列 。该实现支持有限数量的优先级：255。建议使用 1 到 10 之间的值。（因为数字大消耗CPU）
+
+- 声明队列时，通过附加参数参数设置：
+
+  ```java
+  Map<String, Object> arguments = new HashMap<String, Object>();
+  // 设置队列优先级
+  arguments.put("x-max-priority", 10);
+  QueueBuilder.durable(NORMAL_QUEUE_C).withArguments(arguments).build();
+  ```
+
+- 发送消息的时候为消息设置：
+
+  ```
+  // 发送消息
+  rabbitTemplate.convertAndSend(
+          // 交换机
+          DelayByPluginConfig.DELAY_EXCHANGE,
+          // 路由键
+          DelayByPluginConfig.DELAY_KEY,
+          // 消息
+          "消息发送时间：" + new Date().toString(),
+          // 参数设置(是一个函数时接口)
+          message -> {
+              // 设置消息的延时时长
+              MessageProperties messageProperties = message.getMessageProperties();
+              // 设置消息优先级
+              messageProperties.setPriority(5);
+              return message;
+          }
+  );
+  ```
 
 
 
+### [惰性队列]((https://www.rabbitmq.com/lazy-queues.html))
 
+**懒惰队列**的概念——队列尽可能早地将它们的内容移动到磁盘，并且只在消费者请求时才将它们加载到 RAM 中。
 
+主要目标之一是能够支持非常长的队列。由于各种原因，队列可能会变得非常长：
 
+- 消费者离线、宕机、维护等；
 
+- 生产者突然发送大量消息，消费者来不及消费；
 
+- 消费者比平时慢等。
 
+默认情况下，队列在消息发布到 RabbitMQ 时保留消息的内存缓存，该缓存已填满。这个缓存的想法是能够尽可能快地将消息传递给消费者。请注意，持久消息可以在进入代理时写入磁盘**并同时**保存在 RAM 中。
+
+```java
+ Map<String, Object> args = new HashMap<String, Object>();
+args.put( "x-queue-mode" , "lazy" );
+```
+
+### 幂等性
+
+幂等性：指任意多次执行所产生的影响与一次产生的影响一致。
+
+常见问题：重复消费。
+
+解决：
+
+- 唯一ID+指纹码机制
+- Redis原子性，使用`setnx`命令
 
 
 
@@ -1070,17 +1238,21 @@ spring:
 
 > 使用
 
-- 使用@Configuration配置类创建队列和交换机。
+- 使用@Configuration配置类创建队列（Queue）、交换机（Exchange）和绑定（Binding）。
 - 使用@RabbitListener(queues = "queueName")来接收消息。
 - 使用RabbitTemplate来发送消息。
 
 > 示例
 
+[👉Github地址](https://github.com/wuraoo/springboot-demo/tree/master/rabbitmq/springboot-rabbitmq/src/main/java/com/zjj/rabbitmq)
+
 1. HelloWorld：简单的发送消息
 2. WorkQueues：竞争消费（轮询）
 3. Publish/Subscribe(Fanout)：扇出（广播）
-4. Routing(Direct)：
-5. Topic
+4. Routing(Direct)：路由指定
+5. Topic：可以是使用通配符"#"、"*"进行指定routingKey
+6. LazyQueues：延时队列（通过TTL和死信队列实现）
+7. 延时队列（插件实现）：能够解决6中出现的问题
 
 
 
