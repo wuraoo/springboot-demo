@@ -1208,6 +1208,112 @@ args.put( "x-queue-mode" , "lazy" );
 
 
 
+## 九、[集群](https://www.rabbitmq.com/clustering.html)
+
+### 环境搭建
+
+1. 准备三台服务器（分别命名：node1、node2、node3）
+
+   ```shell
+   vi /etc/hostname
+   ```
+
+2. 配置各个节点的hosts文件
+
+   vi /etc/hosts
+
+   192.168.1.118 node1
+   192.168.1.254 node2
+   192.168.1.160 node3
+
+3. 确保各个节点的cookie文件相同
+
+   ```shell
+   # 将node1的cookie远程复制给其他节点
+   scp /var/lib/rabbitmq/.erlang.cookie root@node2:/var/lib/rabbitmq/.erlang.cookie
+   scp /var/lib/rabbitmq/.erlang.cookie root@node3:/var/lib/rabbitmq/.erlang.cookie
+   ```
+
+4. 重启MQ
+
+   ````shell
+    rabbitmq-server -detached
+   ````
+
+5. 将节点加入集群
+
+   ```shell
+   # 关闭mq服务
+   rabbitmqctl stop_app
+   rabbitmqctl reset
+   # 将该节点加入到node1中，注意防火墙关闭
+   rabbitmqctl join_cluster rabbit@node1
+   rabbitmqctl start_app
+   ```
+
+6. 查看集群状态
+
+   ````shell
+   rabbitmqctl cluster_status
+   
+   # 出现如下结果表示成功
+   Disk Nodes
+   
+   rabbit@node1
+   rabbit@node2
+   rabbit@node3
+   
+   Running Nodes
+   
+   rabbit@node1
+   rabbit@node2
+   rabbit@node3
+   ````
+
+7. 创建集群用户，角色权限
+
+   ```shell
+   # 创建admin用户
+   rabbitmqctl add_user admin admin
+   # 添加角色标签
+   rabbitmqctl set_user_tags admin administrator
+   # 添加权限
+   rabbitmqctl set_permissions -p "/" admin ".*" ".*" ".*"
+   ```
+
+8. Web可化登录
+
+   ![image-20211205141246811](RabbitMQ.assets/image-20211205141246811.png)
+
+9. 节点脱离集群
+
+   ```shell
+   rabbitmqctl stop_app
+   rabbitmqctl reset
+   rabbitmqctl start_app
+   rabbitmqctl cluster_status
+   # 该命令需要在主机上执行
+   rabbitmqctl forget_cluster_node rabbit@node2
+   ```
+
+   
+
+### [镜像队列](https://www.rabbitmq.com/ha.html)
+
+什么是镜像队列？
+
+- 在集群搭建好之后，当消息发送到node1中队列时，只有node1中的队列保存了该消息；当node1宕机后，而其他节点上又没有备份，就会导致消息丢失。因此需要使用**镜像**来复制领导节点的队列，称之为镜像队列。
+
+如何配置？
+
+- 可以使用策略来配置。策略配置详情查看[官网](https://www.rabbitmq.com/parameters.html#policies)。
+
+- 例如Web方式：Admin -> Policies -> add/update a policy
+
+  ![celue](RabbitMQ.assets/celue.png)
+
+
+
 
 
 ## Springboot整合
