@@ -1,0 +1,34 @@
+server:
+  port: 8001
+
+spring:
+  kafka:
+    # kafka集群服务地址
+    bootstrap-servers: 192.168.72.161:9092,192.168.72.162:9092,192.168.72.163:9092
+    # 生产者配置
+    producer:
+      retries: 3 # 发送失败时，重试次数
+      batch-size: 16384   #每次批量发送消息的大小
+      buffer-memory: 33554432   # 缓存取大小
+      acks: 1   # 消息发送确认（-1，0，1）
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer   # key序列化
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer  # value序列化
+    # 消费者
+    consumer:
+      group-id: my-group1  # 消费卒名称
+      enable-auto-commit: false   # 关闭自动提交
+      auto-offset-reset: earliest   # 新建消费组消费的offset位置（earliest：最早的；latest：最后的）
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer  # key反序列化
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer  # value反序列化
+      max-poll-records: 500   # 每次最大拉取消息数量
+    # 监听器
+    listener:
+      # RECORD: 每有一条消息被消费就提交
+      # BATCH： 每一批poll()的数据被消费之后提交
+      # TIME： 每一批poll()的数据被消费之后，距离上一次提交时间大于Time则提交
+      # COUNT： 每一批poll()的数据被消费撞击后，被处理的record的数量大于Count时就提交
+      # COUNT_TIME： count、time满足其一即可
+      # MANUAL： 每一批poll()的数据被消费之后，手动调用ack.acknowledge()后提交
+      # ack.acknowledge()之后立即提交
+      ack-mode: manual_immediate
+
